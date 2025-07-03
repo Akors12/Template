@@ -55,13 +55,10 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-align: center;
             border-top: 4px solid var(--accent);
-            position: relative;
-            min-height: 180px;
         }
         
         .metric h3 {
             margin-top: 0;
-            margin-bottom: 10px;
             color: var(--primary-light);
         }
         
@@ -69,51 +66,6 @@
             font-size: 24px;
             font-weight: bold;
             color: var(--primary);
-            margin-bottom: 10px;
-        }
-        
-        .chart-container {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto;
-            position: relative;
-        }
-        
-        .chart {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .chart-slice {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
-            transform-origin: 50% 50%;
-        }
-        
-        .chart-legend {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            font-size: 12px;
-        }
-        
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            margin-right: 5px;
         }
         
         table {
@@ -374,28 +326,12 @@
             <div class="value" id="total-assignments">0</div>
         </div>
         <div class="metric">
-            <h3>Completion Status</h3>
+            <h3>Completed</h3>
             <div class="value" id="completed">0%</div>
-            <div class="chart-container">
-                <div class="chart" id="completion-chart">
-                    <!-- Pie chart slices will be added here -->
-                </div>
-            </div>
-            <div class="chart-legend" id="completion-legend">
-                <!-- Legend will be added here -->
-            </div>
         </div>
         <div class="metric">
-            <h3>Overdue Status</h3>
+            <h3>Overdue</h3>
             <div class="value" id="overdue">0</div>
-            <div class="chart-container">
-                <div class="chart" id="overdue-chart">
-                    <!-- Pie chart slices will be added here -->
-                </div>
-            </div>
-            <div class="chart-legend" id="overdue-legend">
-                <!-- Legend will be added here -->
-            </div>
         </div>
         <div class="metric">
             <h3>Average Grade</h3>
@@ -566,10 +502,6 @@
         const overdueEl = document.getElementById('overdue');
         const avgGradeEl = document.getElementById('avg-grade');
         const editModal = document.getElementById('edit-modal');
-        const completionChart = document.getElementById('completion-chart');
-        const overdueChart = document.getElementById('overdue-chart');
-        const completionLegend = document.getElementById('completion-legend');
-        const overdueLegend = document.getElementById('overdue-legend');
 
         // German grading system mapping
         const gradeSystem = {
@@ -655,26 +587,13 @@
             }
         };
 
-        // Chart colors
-        const chartColors = {
-            complete: '#27ae60',
-            inProgress: '#f39c12',
-            notStarted: '#bdc3c7',
-            overdue: '#e74c3c',
-            onTime: '#27ae60'
-        };
-
         // Initialize the app
         function init() {
             loadFromLocalStorage();
-
-
-            saveToLocalStorage();
+            renderAssignments();
+            updateDashboard();
+            setupEventListeners();
         }
-
-        renderAssignments();
-        updateDashboard();
-        setupEventListeners();
 
         // Format date as YYYY-MM-DD
         function formatDate(date) {
@@ -730,7 +649,7 @@
 
             // Validate required fields
             if (!newAssignment.name || !newAssignment.class || !newAssignment.dueDate) {
-                alert('Bitte füllen Sie alle erforderlichen Felder aus (Name, Klasse und Fälligkeitsdatum)');
+                alert('Please fill in all required fields (Name, Class, and Due Date)');
                 return;
             }
 
@@ -797,7 +716,7 @@
             tableBody.innerHTML = '';
 
             if (assignments.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center">Noch keine Aufgaben. Fügen Sie Ihre erste Aufgabe oben hinzu!</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center">No assignments yet. Add your first assignment above!</td></tr>';
                 return;
             }
 
@@ -823,14 +742,14 @@
                 row.innerHTML = `
                     <td>${assignment.name}</td>
                     <td>${assignment.class}</td>
-                    <td>${dueDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
-                    <td class="${daysLeft < 0 ? 'days-left-urgent' : ''}">${daysLeft < 0 ? Math.abs(daysLeft) + ' Tage überfällig' : daysLeft + ' Tage'}</td>
+                    <td>${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td class="${daysLeft < 0 ? 'days-left-urgent' : ''}">${daysLeft < 0 ? Math.abs(daysLeft) + ' days overdue' : daysLeft + ' days'}</td>
                     <td class="status-${assignment.status.toLowerCase().replace(' ', '-')}">${assignment.status}</td>
                     <td class="priority-${priority.toLowerCase()}">${priority}</td>
                     <td class="${gradeClass}">${gradeDisplay}</td>
                     <td>
-                        <button onclick="openEditModal(${assignment.id})">Bearbeiten</button>
-                        <button class="danger" onclick="confirmDelete(${assignment.id})">Löschen</button>
+                        <button onclick="openEditModal(${assignment.id})">Edit</button>
+                        <button class="danger" onclick="confirmDelete(${assignment.id})">Delete</button>
                     </td>
                 `;
 
@@ -838,60 +757,32 @@
             });
         }
 
-        // Update dashboard metrics and charts
+        // Calculate average grade in points
+        function calculateAverageGrade() {
+            const gradedAssignments = assignments.filter(a => a.grade && a.grade !== '');
+            if (gradedAssignments.length === 0) return null;
+
+            const totalPoints = gradedAssignments.reduce((sum, a) => sum + parseInt(a.grade), 0);
+            return totalPoints / gradedAssignments.length;
+        }
+
+        // Update dashboard metrics
         function updateDashboard() {
             totalAssignmentsEl.textContent = assignments.length;
 
-            // Calculate completion status
             const completedCount = assignments.filter(a => a.status === 'Complete').length;
-            const inProgressCount = assignments.filter(a => a.status === 'In Progress').length;
-            const notStartedCount = assignments.filter(a => a.status === 'Not Started').length;
-
             const completedPercentage = assignments.length > 0 ?
                 Math.round((completedCount / assignments.length) * 100) :
                 0;
             completedEl.textContent = `${completedPercentage}%`;
 
-            // Calculate overdue status
             const overdueCount = assignments.filter(a => {
                 const dueDate = new Date(a.dueDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 return dueDate < today && a.status !== 'Complete';
             }).length;
-
-            const onTimeCount = assignments.length - overdueCount;
             overdueEl.textContent = overdueCount;
-
-            // Update completion pie chart
-            const completionData = {
-                'Complete': completedCount,
-                'In Progress': inProgressCount,
-                'Not Started': notStartedCount
-            };
-
-            const completionColors = {
-                'Complete': chartColors.complete,
-                'In Progress': chartColors.inProgress,
-                'Not Started': chartColors.notStarted
-            };
-
-            createPieChart(completionChart, completionData, completionColors);
-            createLegend(completionLegend, completionData, completionColors);
-
-            // Update overdue pie chart
-            const overdueData = {
-                'Overdue': overdueCount,
-                'On Time': onTimeCount
-            };
-
-            const overdueColors = {
-                'Overdue': chartColors.overdue,
-                'On Time': chartColors.onTime
-            };
-
-            createPieChart(overdueChart, overdueData, overdueColors);
-            createLegend(overdueLegend, overdueData, overdueColors);
 
             // Calculate and display average grade
             const averagePoints = calculateAverageGrade();
@@ -909,15 +800,6 @@
             }
         }
 
-        // Calculate average grade in points
-        function calculateAverageGrade() {
-            const gradedAssignments = assignments.filter(a => a.grade && a.grade !== '');
-            if (gradedAssignments.length === 0) return null;
-
-            const totalPoints = gradedAssignments.reduce((sum, a) => sum + parseInt(a.grade), 0);
-            return totalPoints / gradedAssignments.length;
-        }
-
         // Open edit modal
         function openEditModal(id) {
             const assignment = assignments.find(a => a.id === id);
@@ -933,7 +815,7 @@
 
                 editModal.style.display = 'flex';
             } else {
-                console.error('Aufgabe nicht gefunden mit ID:', id);
+                console.error('Assignment not found with ID:', id);
             }
         }
 
@@ -945,7 +827,7 @@
 
         // Confirm before deleting
         function confirmDelete(id) {
-            if (confirm('Sind Sie sicher, dass Sie diese Aufgabe löschen möchten?')) {
+            if (confirm('Are you sure you want to delete this assignment?')) {
                 deleteAssignment(id);
             }
         }
