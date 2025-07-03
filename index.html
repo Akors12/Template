@@ -668,47 +668,13 @@
         function init() {
             loadFromLocalStorage();
 
-            // Add sample data if empty
-            if (assignments.length === 0) {
-                const today = new Date();
-                const nextWeek = new Date();
-                nextWeek.setDate(today.getDate() + 7);
 
-                assignments = [{
-                    id: 1,
-                    name: "Mathe Klausur",
-                    class: "Mathematik",
-                    dueDate: formatDate(nextWeek),
-                    status: "Not Started",
-                    priority: "High",
-                    grade: "13",
-                    notes: "Themen: Analysis und Algebra"
-                }, {
-                    id: 2,
-                    name: "Deutsch Aufsatz",
-                    class: "Deutsch",
-                    dueDate: formatDate(new Date(today.getTime() + 3 * 86400000)),
-                    status: "In Progress",
-                    priority: "Medium",
-                    grade: "10",
-                    notes: "Interpretation von Faust"
-                }, {
-                    id: 3,
-                    name: "Englisch Präsentation",
-                    class: "Englisch",
-                    dueDate: formatDate(new Date(today.getTime() - 2 * 86400000)),
-                    status: "Complete",
-                    priority: "Overdue",
-                    grade: "15",
-                    notes: "Präsentation über Shakespeare"
-                }];
-                saveToLocalStorage();
-            }
-
-            renderAssignments();
-            updateDashboard();
-            setupEventListeners();
+            saveToLocalStorage();
         }
+
+        renderAssignments();
+        updateDashboard();
+        setupEventListeners();
 
         // Format date as YYYY-MM-DD
         function formatDate(date) {
@@ -869,67 +835,6 @@
                 `;
 
                 tableBody.appendChild(row);
-            });
-        }
-
-        // Create pie chart
-        function createPieChart(container, data, colors) {
-            container.innerHTML = '';
-
-            let cumulativePercent = 0;
-            let total = Object.values(data).reduce((sum, value) => sum + value, 0);
-
-            if (total === 0) {
-                // Show empty state
-                const emptySlice = document.createElement('div');
-                emptySlice.className = 'chart-slice';
-                emptySlice.style.backgroundColor = '#f5f5f5';
-                emptySlice.style.clipPath = 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%)';
-                container.appendChild(emptySlice);
-                return;
-            }
-
-            Object.entries(data).forEach(([key, value]) => {
-                const percent = value / total;
-                const slice = document.createElement('div');
-                slice.className = 'chart-slice';
-                slice.style.backgroundColor = colors[key];
-
-                // Calculate start and end points for the slice
-                const startX = 50 + 50 * Math.cos(2 * Math.PI * cumulativePercent);
-                const startY = 50 + 50 * Math.sin(2 * Math.PI * cumulativePercent);
-                cumulativePercent += percent;
-                const endX = 50 + 50 * Math.cos(2 * Math.PI * cumulativePercent);
-                const endY = 50 + 50 * Math.sin(2 * Math.PI * cumulativePercent);
-
-                // Create the clip path polygon
-                const largeArcFlag = percent > 0.5 ? 1 : 0;
-                slice.style.clipPath = `polygon(50% 50%, ${startX}% ${startY}%, ${endX}% ${endY}%)`;
-
-                container.appendChild(slice);
-            });
-        }
-
-        // Create chart legend
-        function createLegend(container, data, colors) {
-            container.innerHTML = '';
-
-            Object.entries(data).forEach(([key, value]) => {
-                if (value > 0) {
-                    const legendItem = document.createElement('div');
-                    legendItem.className = 'legend-item';
-
-                    const colorBox = document.createElement('div');
-                    colorBox.className = 'legend-color';
-                    colorBox.style.backgroundColor = colors[key];
-
-                    const label = document.createElement('span');
-                    label.textContent = `${key}: ${value}`;
-
-                    legendItem.appendChild(colorBox);
-                    legendItem.appendChild(label);
-                    container.appendChild(legendItem);
-                }
             });
         }
 
