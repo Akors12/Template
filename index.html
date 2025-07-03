@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Tracker</title>
+    <style>
+         :root {
+            --primary: #2c3e50;
+            --primary-light: #3d566e;
+            --primary-dark: #1a252f;
+            --accent: #3498db;
+            --accent-light: #5dade2;
+            --accent-dark: #2874a6;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --medium: #bdc3c7;
+            --dark: #7f8c8d;
+            --white: #ffffff;
+            --overdue: #e74c3c;
+            --complete: #27ae60;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f9fc;
+        }
+        
+        h1,
+        h2 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent-light);
+            padding-bottom: 10px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric {
+            background: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-top: 4px solid var(--accent);
+            position: relative;
+            min-height: 180px;
+        }
+        
+        .metric h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-light);
+        }
+        
+        .metric .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .chart-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-slice {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
+            transform-origin: 50% 50%;
+        }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: var(--white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light);
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .status-not-started {
+            color: var(--dark);
+        }
+        
+        .status-in-progress {
+            color: var(--warning);
+        }
+        
+        .status-complete {
+            color: var(--complete);
+            font-weight: 500;
+        }
+        
+        .priority-high,
+        .days-left-urgent {
+            color: var(--overdue);
+            font-weight: bold;
+        }
+        
+        .priority-medium {
+            color: var(--warning);
+        }
+        
+        .priority-low {
+            color: var(--success);
+        }
+        
+        .form-container {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+        
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--medium);
+            border-radius: 4px;
+            background-color: var(--light);
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            background-color: var(--accent-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        button.secondary {
+            background-color: var(--medium);
+        }
+        
+        button.secondary:hover {
+            background-color: var(--dark);
+        }
+        
+        button.danger {
+            background-color: var(--danger);
+        }
+        
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-top: 4px solid var(--accent);
+        }
+        
+        .modal-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .grade-1plus {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .grade-1 {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .grade-1minus {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .grade-2plus {
+            background-color: #2980b9;
+            color: white;
+        }
+        
+        .grade-2 {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .grade-2minus {
+            background-color: #5dade2;
+            color: white;
+        }
+        
+        .grade-3plus {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .grade-3 {
+            background-color: #f1c40f;
+            color: var(--primary-dark);
+        }
+        
+        .grade-3minus {
+            background-color: #f4d03f;
+            color: var(--primary-dark);
+        }
+        
+        .grade-4plus {
+            background-color: #e67e22;
+            color: white;
+        }
+        
+        .grade-4 {
+            background-color: #d35400;
+            color: white;
+        }
+        
+        .grade-4minus {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .grade-5plus {
+            background-color: #c0392b;
+            color: white;
+        }
+        
+        .grade-5 {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .grade-5minus {
+            background-color: #ec7063;
+            color: white;
+        }
+        
+        .grade-6 {
+            background-color: #7f8c8d;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            th,
+            td {
+                padding: 10px 12px;
+            }
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            button {
+                padding: 8px 15px;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Assignment Tracker</h1>
+
+    <div class="dashboard">
+        <div class="metric">
+            <h3>Total Assignments</h3>
+            <div class="value" id="total-assignments">0</div>
+        </div>
+        <div class="metric">
+            <h3>Completion Status</h3>
+            <div class="value" id="completed">0%</div>
+            <div class="chart-container">
+                <div class="chart" id="completion-chart">
+                    <!-- Pie chart slices will be added here -->
+                </div>
+            </div>
+            <div class="chart-legend" id="completion-legend">
+                <!-- Legend will be added here -->
+            </div>
+        </div>
+        <div class="metric">
+            <h3>Overdue Status</h3>
+            <div class="value" id="overdue">0</div>
+            <div class="chart-container">
+                <div class="chart" id="overdue-chart">
+                    <!-- Pie chart slices will be added here -->
+                </div>
+            </div>
+            <div class="chart-legend" id="overdue-legend">
+                <!-- Legend will be added here -->
+            </div>
+        </div>
+        <div class="metric">
+            <h3>Average Grade</h3>
+            <div class="value" id="avg-grade">-</div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h2>Add New Assignment</h2>
+        <form id="assignment-form">
+            <div class="form-group">
+                <label for="assignment-name">Assignment Name*</label>
+                <input type="text" id="assignment-name" required>
+            </div>
+            <div class="form-group">
+                <label for="class">Class*</label>
+                <input type="text" id="class" required>
+            </div>
+            <div class="form-group">
+                <label for="due-date">Due Date*</label>
+                <input type="date" id="due-date" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status*</label>
+                <select id="status" required>
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Complete">Complete</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority">
+                    <option value="">Auto-calculate</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="grade">Grade (Optional)</label>
+                <select id="grade">
+                    <option value="">N/A</option>
+                    <option value="15">15 (1+)</option>
+                    <option value="14">14 (1)</option>
+                    <option value="13">13 (1-)</option>
+                    <option value="12">12 (2+)</option>
+                    <option value="11">11 (2)</option>
+                    <option value="10">10 (2-)</option>
+                    <option value="9">9 (3+)</option>
+                    <option value="8">8 (3)</option>
+                    <option value="7">7 (3-)</option>
+                    <option value="6">6 (4+)</option>
+                    <option value="5">5 (4)</option>
+                    <option value="4">4 (4-)</option>
+                    <option value="3">3 (5+)</option>
+                    <option value="2">2 (5)</option>
+                    <option value="1">1 (5-)</option>
+                    <option value="0">0 (6)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes (Optional)</label>
+                <input type="text" id="notes">
+            </div>
+            <button type="submit">Add Assignment</button>
+            <button type="reset" class="secondary">Clear Form</button>
+        </form>
+    </div>
+
+    <h2>Your Assignments</h2>
+    <table id="assignments-table">
+        <thead>
+            <tr>
+                <th>Assignment</th>
+                <th>Class</th>
+                <th>Due Date</th>
+                <th>Days Left</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Grade</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="assignments-body">
+            <!-- Assignments will be added here dynamically -->
+        </tbody>
+    </table>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <h2>Edit Assignment</h2>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label for="edit-name">Assignment Name*</label>
+                    <input type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-class">Class*</label>
+                    <input type="text" id="edit-class" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-due-date">Due Date*</label>
+                    <input type="date" id="edit-due-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-status">Status*</label>
+                    <select id="edit-status" required>
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Complete">Complete</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-priority">Priority</label>
+                    <select id="edit-priority">
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-grade">Grade</label>
+                    <select id="edit-grade">
+                        <option value="">N/A</option>
+                        <option value="15">15 (1+)</option>
+                        <option value="14">14 (1)</option>
+                        <option value="13">13 (1-)</option>
+                        <option value="12">12 (2+)</option>
+                        <option value="11">11 (2)</option>
+                        <option value="10">10 (2-)</option>
+                        <option value="9">9 (3+)</option>
+                        <option value="8">8 (3)</option>
+                        <option value="7">7 (3-)</option>
+                        <option value="6">6 (4+)</option>
+                        <option value="5">5 (4)</option>
+                        <option value="4">4 (4-)</option>
+                        <option value="3">3 (5+)</option>
+                        <option value="2">2 (5)</option>
+                        <option value="1">1 (5-)</option>
+                        <option value="0">0 (6)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-notes">Notes</label>
+                    <input type="text" id="edit-notes">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Assignment data structure
+        let assignments = [];
+
+        // DOM elements
+        const form = document.getElementById('assignment-form');
+        const editForm = document.getElementById('edit-form');
+        const tableBody = document.getElementById('assignments-body');
+        const totalAssignmentsEl = document.getElementById('total-assignments');
+        const completedEl = document.getElementById('completed');
+        const overdueEl = document.getElementById('overdue');
+        const avgGradeEl = document.getElementById('avg-grade');
+        const editModal = document.getElementById('edit-modal');
+        const completionChart = document.getElementById('completion-chart');
+        const overdueChart = document.getElementById('overdue-chart');
+        const completionLegend = document.getElementById('completion-legend');
+        const overdueLegend = document.getElementById('overdue-legend');
+
+        // German grading system mapping
+        const gradeSystem = {
+            '15': {
+                points: 15,
+                mark: '1+',
+                colorClass: 'grade-1plus'
+            },
+            '14': {
+                points: 14,
+                mark: '1',
+                colorClass: 'grade-1'
+            },
+            '13': {
+                points: 13,
+                mark: '1-',
+                colorClass: 'grade-1minus'
+            },
+            '12': {
+                points: 12,
+                mark: '2+',
+                colorClass: 'grade-2plus'
+            },
+            '11': {
+                points: 11,
+                mark: '2',
+                colorClass: 'grade-2'
+            },
+            '10': {
+                points: 10,
+                mark: '2-',
+                colorClass: 'grade-2minus'
+            },
+            '9': {
+                points: 9,
+                mark: '3+',
+                colorClass: 'grade-3plus'
+            },
+            '8': {
+                points: 8,
+                mark: '3',
+                colorClass: 'grade-3'
+            },
+            '7': {
+                points: 7,
+                mark: '3-',
+                colorClass: 'grade-3minus'
+            },
+            '6': {
+                points: 6,
+                mark: '4+',
+                colorClass: 'grade-4plus'
+            },
+            '5': {
+                points: 5,
+                mark: '4',
+                colorClass: 'grade-4'
+            },
+            '4': {
+                points: 4,
+                mark: '4-',
+                colorClass: 'grade-4minus'
+            },
+            '3': {
+                points: 3,
+                mark: '5+',
+                colorClass: 'grade-5plus'
+            },
+            '2': {
+                points: 2,
+                mark: '5',
+                colorClass: 'grade-5'
+            },
+            '1': {
+                points: 1,
+                mark: '5-',
+                colorClass: 'grade-5minus'
+            },
+            '0': {
+                points: 0,
+                mark: '6',
+                colorClass: 'grade-6'
+            }
+        };
+
+        // Chart colors
+        const chartColors = {
+            complete: '#27ae60',
+            inProgress: '#f39c12',
+            notStarted: '#bdc3c7',
+            overdue: '#e74c3c',
+            onTime: '#27ae60'
+        };
+
+        // Initialize the app
+        function init() {
+            loadFromLocalStorage();
+
+            // Add sample data if empty
+            if (assignments.length === 0) {
+                const today = new Date();
+                const nextWeek = new Date();
+                nextWeek.setDate(today.getDate() + 7);
+
+                assignments = [{
+                    id: 1,
+                    name: "Mathe Klausur",
+                    class: "Mathematik",
+                    dueDate: formatDate(nextWeek),
+                    status: "Not Started",
+                    priority: "High",
+                    grade: "13",
+                    notes: "Themen: Analysis und Algebra"
+                }, {
+                    id: 2,
+                    name: "Deutsch Aufsatz",
+                    class: "Deutsch",
+                    dueDate: formatDate(new Date(today.getTime() + 3 * 86400000)),
+                    status: "In Progress",
+                    priority: "Medium",
+                    grade: "10",
+                    notes: "Interpretation von Faust"
+                }, {
+                    id: 3,
+                    name: "Englisch Präsentation",
+                    class: "Englisch",
+                    dueDate: formatDate(new Date(today.getTime() - 2 * 86400000)),
+                    status: "Complete",
+                    priority: "Overdue",
+                    grade: "15",
+                    notes: "Präsentation über Shakespeare"
+                }];
+                saveToLocalStorage();
+            }
+
+            renderAssignments();
+            updateDashboard();
+            setupEventListeners();
+        }
+
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            form.addEventListener('submit', handleFormSubmit);
+            editForm.addEventListener('submit', handleEditSubmit);
+
+            // Automatically calculate priority when due date changes
+            document.getElementById('due-date').addEventListener('change', function() {
+                if (!document.getElementById('priority').value) {
+                    const priority = calculatePriority(this.value);
+                    document.getElementById('priority').value = priority;
+                }
+            });
+        }
+
+        // Load data from localStorage
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('assignments');
+            if (saved) {
+                try {
+                    assignments = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Failed to parse saved assignments:", e);
+                    assignments = [];
+                }
+            }
+        }
+
+        // Save data to localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('assignments', JSON.stringify(assignments));
+        }
+
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const newAssignment = {
+                id: assignments.length > 0 ? Math.max(...assignments.map(a => a.id)) + 1 : 1,
+                name: document.getElementById('assignment-name').value.trim(),
+                class: document.getElementById('class').value.trim(),
+                dueDate: document.getElementById('due-date').value,
+                status: document.getElementById('status').value,
+                priority: document.getElementById('priority').value || calculatePriority(document.getElementById('due-date').value),
+                grade: document.getElementById('grade').value || '',
+                notes: document.getElementById('notes').value.trim() || ''
+            };
+
+            // Validate required fields
+            if (!newAssignment.name || !newAssignment.class || !newAssignment.dueDate) {
+                alert('Bitte füllen Sie alle erforderlichen Felder aus (Name, Klasse und Fälligkeitsdatum)');
+                return;
+            }
+
+            assignments.push(newAssignment);
+            saveToLocalStorage();
+            renderAssignments();
+            updateDashboard();
+            form.reset();
+
+            // Reset priority to auto-calculate for next entry
+            document.getElementById('priority').value = '';
+        }
+
+        // Handle edit form submission
+        function handleEditSubmit(e) {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById('edit-id').value);
+            const assignmentIndex = assignments.findIndex(a => a.id === id);
+
+            if (assignmentIndex !== -1) {
+                assignments[assignmentIndex] = {
+                    id: id,
+                    name: document.getElementById('edit-name').value.trim(),
+                    class: document.getElementById('edit-class').value.trim(),
+                    dueDate: document.getElementById('edit-due-date').value,
+                    status: document.getElementById('edit-status').value,
+                    priority: document.getElementById('edit-priority').value,
+                    grade: document.getElementById('edit-grade').value || '',
+                    notes: document.getElementById('edit-notes').value.trim() || ''
+                };
+
+                saveToLocalStorage();
+                renderAssignments();
+                updateDashboard();
+                closeModal();
+            }
+        }
+
+        // Calculate priority based on due date
+        function calculatePriority(dueDate) {
+            if (!dueDate) return "Low";
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(dueDate);
+            const timeDiff = due.getTime() - today.getTime();
+            const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            if (daysLeft < 0) return "Overdue";
+            if (daysLeft <= 3) return "High";
+            if (daysLeft <= 7) return "Medium";
+            return "Low";
+        }
+
+        // Get grade display text
+        function getGradeDisplay(gradeValue) {
+            if (!gradeValue || !gradeSystem[gradeValue]) return '-';
+            return `${gradeValue} (${gradeSystem[gradeValue].mark})`;
+        }
+
+        // Render assignments to the table
+        function renderAssignments() {
+            tableBody.innerHTML = '';
+
+            if (assignments.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center">Noch keine Aufgaben. Fügen Sie Ihre erste Aufgabe oben hinzu!</td></tr>';
+                return;
+            }
+
+            // Sort by due date (earliest first)
+            const sortedAssignments = [...assignments].sort((a, b) => {
+                return new Date(a.dueDate) - new Date(b.dueDate);
+            });
+
+            sortedAssignments.forEach(assignment => {
+                const dueDate = new Date(assignment.dueDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const timeDiff = dueDate.getTime() - today.getTime();
+                const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                const priority = assignment.priority || calculatePriority(assignment.dueDate);
+                const gradeInfo = assignment.grade ? gradeSystem[assignment.grade] : null;
+                const gradeClass = gradeInfo ? gradeInfo.colorClass : '';
+                const gradeDisplay = getGradeDisplay(assignment.grade);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${assignment.name}</td>
+                    <td>${assignment.class}</td>
+                    <td>${dueDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                    <td class="${daysLeft < 0 ? 'days-left-urgent' : ''}">${daysLeft < 0 ? Math.abs(daysLeft) + ' Tage überfällig' : daysLeft + ' Tage'}</td>
+                    <td class="status-${assignment.status.toLowerCase().replace(' ', '-')}">${assignment.status}</td>
+                    <td class="priority-${priority.toLowerCase()}">${priority}</td>
+                    <td class="${gradeClass}">${gradeDisplay}</td>
+                    <td>
+                        <button onclick="openEditModal(${assignment.id})">Bearbeiten</button>
+                        <button class="danger" onclick="confirmDelete(${assignment.id})">Löschen</button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Create pie chart
+        function createPieChart(container, data, colors) {
+            container.innerHTML = '';
+
+            let cumulativePercent = 0;
+            let total = Object.values(data).reduce((sum, value) => sum + value, 0);
+
+            if (total === 0) {
+                // Show empty state
+                const emptySlice = document.createElement('div');
+                emptySlice.className = 'chart-slice';
+                emptySlice.style.backgroundColor = '#f5f5f5';
+                emptySlice.style.clipPath = 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%)';
+                container.appendChild(emptySlice);
+                return;
+            }
+
+            Object.entries(data).forEach(([key, value]) => {
+                const percent = value / total;
+                const slice = document.createElement('div');
+                slice.className = 'chart-slice';
+                slice.style.backgroundColor = colors[key];
+
+                // Calculate start and end points for the slice
+                const startX = 50 + 50 * Math.cos(2 * Math.PI * cumulativePercent);
+                const startY = 50 + 50 * Math.sin(2 * Math.PI * cumulativePercent);
+                cumulativePercent += percent;
+                const endX = 50 + 50 * Math.cos(2 * Math.PI * cumulativePercent);
+                const endY = 50 + 50 * Math.sin(2 * Math.PI * cumulativePercent);
+
+                // Create the clip path polygon
+                const largeArcFlag = percent > 0.5 ? 1 : 0;
+                slice.style.clipPath = `polygon(50% 50%, ${startX}% ${startY}%, ${endX}% ${endY}%)`;
+
+                container.appendChild(slice);
+            });
+        }
+
+        // Create chart legend
+        function createLegend(container, data, colors) {
+            container.innerHTML = '';
+
+            Object.entries(data).forEach(([key, value]) => {
+                if (value > 0) {
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+
+                    const colorBox = document.createElement('div');
+                    colorBox.className = 'legend-color';
+                    colorBox.style.backgroundColor = colors[key];
+
+                    const label = document.createElement('span');
+                    label.textContent = `${key}: ${value}`;
+
+                    legendItem.appendChild(colorBox);
+                    legendItem.appendChild(label);
+                    container.appendChild(legendItem);
+                }
+            });
+        }
+
+        // Update dashboard metrics and charts
+        function updateDashboard() {
+            totalAssignmentsEl.textContent = assignments.length;
+
+            // Calculate completion status
+            const completedCount = assignments.filter(a => a.status === 'Complete').length;
+            const inProgressCount = assignments.filter(a => a.status === 'In Progress').length;
+            const notStartedCount = assignments.filter(a => a.status === 'Not Started').length;
+
+            const completedPercentage = assignments.length > 0 ?
+                Math.round((completedCount / assignments.length) * 100) :
+                0;
+            completedEl.textContent = `${completedPercentage}%`;
+
+            // Calculate overdue status
+            const overdueCount = assignments.filter(a => {
+                const dueDate = new Date(a.dueDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return dueDate < today && a.status !== 'Complete';
+            }).length;
+
+            const onTimeCount = assignments.length - overdueCount;
+            overdueEl.textContent = overdueCount;
+
+            // Update completion pie chart
+            const completionData = {
+                'Complete': completedCount,
+                'In Progress': inProgressCount,
+                'Not Started': notStartedCount
+            };
+
+            const completionColors = {
+                'Complete': chartColors.complete,
+                'In Progress': chartColors.inProgress,
+                'Not Started': chartColors.notStarted
+            };
+
+            createPieChart(completionChart, completionData, completionColors);
+            createLegend(completionLegend, completionData, completionColors);
+
+            // Update overdue pie chart
+            const overdueData = {
+                'Overdue': overdueCount,
+                'On Time': onTimeCount
+            };
+
+            const overdueColors = {
+                'Overdue': chartColors.overdue,
+                'On Time': chartColors.onTime
+            };
+
+            createPieChart(overdueChart, overdueData, overdueColors);
+            createLegend(overdueLegend, overdueData, overdueColors);
+
+            // Calculate and display average grade
+            const averagePoints = calculateAverageGrade();
+            if (averagePoints !== null) {
+                const roundedAverage = Math.round(averagePoints * 10) / 10; // Round to 1 decimal
+                const closestGrade = Object.values(gradeSystem).reduce((prev, curr) => {
+                    return (Math.abs(curr.points - averagePoints) < Math.abs(prev.points - averagePoints)) ? curr : prev;
+                });
+
+                avgGradeEl.textContent = `${roundedAverage} (${closestGrade.mark})`;
+                avgGradeEl.className = 'value ' + closestGrade.colorClass;
+            } else {
+                avgGradeEl.textContent = '-';
+                avgGradeEl.className = 'value';
+            }
+        }
+
+        // Calculate average grade in points
+        function calculateAverageGrade() {
+            const gradedAssignments = assignments.filter(a => a.grade && a.grade !== '');
+            if (gradedAssignments.length === 0) return null;
+
+            const totalPoints = gradedAssignments.reduce((sum, a) => sum + parseInt(a.grade), 0);
+            return totalPoints / gradedAssignments.length;
+        }
+
+        // Open edit modal
+        function openEditModal(id) {
+            const assignment = assignments.find(a => a.id === id);
+            if (assignment) {
+                document.getElementById('edit-id').value = assignment.id;
+                document.getElementById('edit-name').value = assignment.name;
+                document.getElementById('edit-class').value = assignment.class;
+                document.getElementById('edit-due-date').value = assignment.dueDate;
+                document.getElementById('edit-status').value = assignment.status;
+                document.getElementById('edit-priority').value = assignment.priority || calculatePriority(assignment.dueDate);
+                document.getElementById('edit-grade').value = assignment.grade || '';
+                document.getElementById('edit-notes').value = assignment.notes || '';
+
+                editModal.style.display = 'flex';
+            } else {
+                console.error('Aufgabe nicht gefunden mit ID:', id);
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            editModal.style.display = 'none';
+            editForm.reset();
+        }
+
+        // Confirm before deleting
+        function confirmDelete(id) {
+            if (confirm('Sind Sie sicher, dass Sie diese Aufgabe löschen möchten?')) {
+                deleteAssignment(id);
+            }
+        }
+
+        // Delete assignment
+        function deleteAssignment(id) {
+            assignments = assignments.filter(a => a.id !== id);
+            saveToLocalStorage();
+            renderAssignments();
+            updateDashboard();
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
